@@ -65,3 +65,18 @@ def get_device(device_id: str):
             status_code=404,
             detail=str(exc),
         ) from exc
+
+
+@app.get("/devices/{device_id}/status")
+def get_device_status(device_id: str):
+    try:
+        return {
+            "device_id": device_id,
+            "status": service.get_device_status(device_id),
+        }
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+    

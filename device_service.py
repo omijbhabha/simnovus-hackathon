@@ -46,3 +46,20 @@ class DeviceService:
             raise ValueError("Device not found")
 
         return self.devices[device_id]
+
+    
+    def get_device_status(self, device_id: str) -> str:
+        device = self.get_device(device_id)
+
+        last_heartbeat = device["last_heartbeat"]
+
+        if last_heartbeat is None:
+            return "OFFLINE"
+
+        heartbeat_time = datetime.fromisoformat(last_heartbeat)
+        elapsed = datetime.now(timezone.utc) - heartbeat_time
+
+        if elapsed.total_seconds() <= 30:
+            return "ONLINE"
+
+        return "OFFLINE"
