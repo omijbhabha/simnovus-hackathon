@@ -93,3 +93,12 @@ def test_device_heartbeat():
     assert response.status_code == 200
     assert response.json()["id"] == device_id
     assert response.json()["last_heartbeat"] is not None
+
+
+def test_heartbeat_for_unknown_device():
+    response = client.post(
+        "/devices/unknown-id/heartbeat"
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Device not found"
