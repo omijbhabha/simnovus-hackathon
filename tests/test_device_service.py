@@ -49,3 +49,19 @@ def test_unknown_device_heartbeat():
         assert False, "Expected ValueError"
     except ValueError as exc:
         assert str(exc) == "Device not found"
+
+
+
+def test_device_status():
+    service = DeviceService()
+
+    device = service.register_device(
+        name="Sensor B",
+        device_type="temperature_sensor",
+    )
+
+    assert service.get_device_status(device["id"]) == "OFFLINE"
+
+    service.record_heartbeat(device["id"])
+
+    assert service.get_device_status(device["id"]) == "ONLINE"
