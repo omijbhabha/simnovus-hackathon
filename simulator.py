@@ -1,9 +1,16 @@
+
 import time
+import threading
 import requests
-import argparse
+import uvicorn
+from fastapi import FastAPI, HTTPException
 
 
 API_URL = "http://127.0.0.1:8000"
+HEARTBEAT_INTERVAL = 5
+
+control_app = FastAPI()
+devices = {}
 
 
 def register_device(name, device_type):
@@ -23,58 +30,106 @@ def send_heartbeat(device_id):
         f"{API_URL}/devices/{device_id}/heartbeat"
     )
     response.raise_for_status()
-    return response.json()
 
 
-def simulate_device(name, device_type, interval=5):
-    device = register_device(name, device_type)
-    device_id = device["id"]
+@control_app.get("/simulator/devices")
+def list_simulated_devices():
+    return {
+        name: {
+            "id": device["id"],
+            "active": device["active"],
+        }
+        for name, device in devices.items()
+    }
 
-    print(f"Registered device: {device['name']}")
-    print(f"Device ID: {device_id}")
+
+@control_app.post("/simulator/devices/{name}/stop")
+def stop_device(name: str):
+    if name not in devices:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    devices[name]["active"] = False
+    return {"message": f"Heartbeats stopped for {name}"}
+
+
+@control_app.post("/simulator/devices/{name}/start")
+def start_device(name: str):
+    if name not in devices:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    devices[name]["active"] = True
+    devices[name]["next_heartbeat"] = time.time()
+    return {"message": f"Heartbeats resumed for {name}"}
+
+
+def run_control_api():
+    uvicorn.run(
+        control_app,
+        host="127.0.0.1",
+        port=8001,
+        log_level="warning",
+    )
+
+
+def main():
+    device_types = [
+        "temperature_sensor",
+        "humidity_sensor",
+        "pressure_sensor",
+        "temperature_sensor",
+        "humidity_sensor",
+    ]
+
+    try:
+        for i, device_type in enumerate(device_types, start=1):
+            name = f"device-{i:02d}"
+            device = register_device(name, device_type)
+
+            devices[name] = {
+                "id": device["id"],
+                "active": True,
+                "next_heartbeat": time.time(),
+            }
+
+            print(f"Registered {name}: {device['id']}")
+
+    except requests.RequestException as exc:
+        print(f"Could not register devices: {exc}")
+        return
+
+    api_thread = threading.Thread(
+        target=run_control_api,
+        daemon=True,
+    )
+    api_thread.start()
+
+    print("\nFive devices are running.")
+    print("Control API: http://127.0.0.1:8001")
+    print("Heartbeats run every 5 seconds.")
+    print("Use the control API to stop or start individual devices.")
+    print("Press Ctrl+C to stop the simulator.")
 
     try:
         while True:
-            send_heartbeat(device_id)
-            print(f"Heartbeat sent for {device['name']}")
-            time.sleep(interval)
+            now = time.time()
+
+            for name, device in devices.items():
+                if device["active"] and now >= device["next_heartbeat"]:
+                    try:
+                        send_heartbeat(device["id"])
+                        print(f"{name} -> heartbeat")
+                    except requests.RequestException as exc:
+                        print(f"Heartbeat failed for {name}: {exc}")
+
+                    device["next_heartbeat"] = (
+                        time.time() + HEARTBEAT_INTERVAL
+                    )
+
+            time.sleep(0.2)
+
     except KeyboardInterrupt:
-        print(f"\nStopped simulation for {device['name']}")
+        print("\nSimulator stopped.")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Simulate a device sending heartbeats"
-    )
-
-    parser.add_argument(
-        "--name",
-        default="Temperature Sensor 1",
-        help="Name of the device",
-    )
-    parser.add_argument(
-        "--type",
-        dest="device_type",
-        default="temperature_sensor",
-        help="Type of the device",
-    )
-    parser.add_argument(
-        "--interval",
-        type=int,
-        default=5,
-        help="Heartbeat interval in seconds",
-    )
-
-    args = parser.parse_args()
-
-    if args.interval <= 0:
-        parser.error("interval must be a positive number")
-
-    try:
-        simulate_device(
-            name=args.name,
-            device_type=args.device_type,
-            interval=args.interval,
-        )
-    except requests.RequestException as exc:
-        print(f"Simulator API error: {exc}")
+    main()

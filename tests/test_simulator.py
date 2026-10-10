@@ -1,36 +1,60 @@
-
 import pytest
+from fastapi.testclient import TestClient
 import simulator
 
 
-def test_simulator_default_arguments(monkeypatch):
-    monkeypatch.setattr(
-        "sys.argv",
-        ["simulator.py"],
-    )
-
-    parser_args = simulator.argparse.ArgumentParser()
-    parser_args.add_argument("--name", default="Temperature Sensor 1")
-    parser_args.add_argument(
-        "--type",
-        dest="device_type",
-        default="temperature_sensor",
-    )
-    parser_args.add_argument("--interval", type=int, default=5)
-
-    args = parser_args.parse_args()
-
-    assert args.name == "Temperature Sensor 1"
-    assert args.device_type == "temperature_sensor"
-    assert args.interval == 5
+client = TestClient(simulator.control_app)
 
 
-@pytest.mark.parametrize("interval", ["0", "-3"])
-def test_simulator_rejects_invalid_interval(interval):
-    with pytest.raises(SystemExit):
-        args = simulator.argparse.ArgumentParser()
-        args.add_argument("--interval", type=int)
-        parsed = args.parse_args(["--interval", interval])
+@pytest.fixture(autouse=True)
+def reset_devices():
+    simulator.devices.clear()
+    simulator.devices.update({
+        "device-01": {
+            "id": "test-device-01",
+            "active": True,
+            "next_heartbeat": 0,
+        },
+        "device-03": {
+            "id": "test-device-03",
+            "active": True,
+            "next_heartbeat": 0,
+        },
+    })
+    yield
+    simulator.devices.clear()
 
-        if parsed.interval <= 0:
-            args.error("interval must be a positive number")
+
+def test_list_simulated_devices():
+    response = client.get("/simulator/devices")
+
+    assert response.status_code == 200
+    assert response.json()["device-01"]["active"] is True
+
+
+def test_stop_device():
+    response = client.post("/simulator/devices/device-03/stop")
+
+    assert response.status_code == 200
+    assert simulator.devices["device-03"]["active"] is False
+
+
+def test_start_device():
+    simulator.devices["device-03"]["active"] = False
+
+    response = client.post("/simulator/devices/device-03/start")
+
+    assert response.status_code == 200
+    assert simulator.devices["device-03"]["active"] is True
+
+
+def test_stop_unknown_device():
+    response = client.post("/simulator/devices/unknown/stop")
+
+    assert response.status_code == 404
+
+
+def test_start_unknown_device():
+    response = client.post("/simulator/devices/unknown/start")
+
+    assert response.status_code == 404
