@@ -51,3 +51,7 @@ def send_heartbeat(device_id: str):
             status_code=404,
             detail=str(exc),
         ) from exc
+
+@app.get("/devices")
+def list_devices():
+    return service.list_devices()

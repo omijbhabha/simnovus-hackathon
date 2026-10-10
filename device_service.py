@@ -37,3 +37,6 @@ class DeviceService:
         )
 
         return self.devices[device_id]
+
+    def list_devices(self) -> list:
+        return list(self.devices.values())
