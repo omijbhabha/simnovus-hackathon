@@ -67,6 +67,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    if args.interval <= 0:
+        parser.error("interval must be a positive number")
+
     try:
         simulate_device(
             name=args.name,
