@@ -73,3 +73,23 @@ def test_summary_endpoint():
         "online_devices": 0,
         "offline_devices": 0,
     }
+
+
+def test_device_heartbeat():
+    registration = client.post(
+        "/devices",
+        json={
+            "name": "Heartbeat Sensor",
+            "device_type": "temperature_sensor",
+        },
+    )
+
+    device_id = registration.json()["id"]
+
+    response = client.post(
+        f"/devices/{device_id}/heartbeat"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == device_id
+    assert response.json()["last_heartbeat"] is not None
