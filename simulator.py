@@ -1,4 +1,3 @@
-
 import time
 import threading
 import requests
@@ -7,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 
 
 API_URL = "http://127.0.0.1:8000"
+CONTROL_API_URL = "http://127.0.0.1:8001"
 HEARTBEAT_INTERVAL = 5
 
 control_app = FastAPI()
@@ -20,6 +20,7 @@ def register_device(name, device_type):
             "name": name,
             "device_type": device_type,
         },
+        timeout=5,
     )
     response.raise_for_status()
     return response.json()
@@ -27,7 +28,8 @@ def register_device(name, device_type):
 
 def send_heartbeat(device_id):
     response = requests.post(
-        f"{API_URL}/devices/{device_id}/heartbeat"
+        f"{API_URL}/devices/{device_id}/heartbeat",
+        timeout=5,
     )
     response.raise_for_status()
 
@@ -71,6 +73,25 @@ def run_control_api():
     )
 
 
+def wait_for_control_api(timeout=10):
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
+        try:
+            response = requests.get(
+                f"{CONTROL_API_URL}/simulator/devices",
+                timeout=1,
+            )
+            if response.status_code == 200:
+                return True
+        except requests.RequestException:
+            pass
+
+        time.sleep(0.2)
+
+    return False
+
+
 def main():
     device_types = [
         "temperature_sensor",
@@ -103,8 +124,12 @@ def main():
     )
     api_thread.start()
 
+    if not wait_for_control_api():
+        print("Could not start the control API on port 8001.")
+        return
+
     print("\nFive devices are running.")
-    print("Control API: http://127.0.0.1:8001")
+    print(f"Control API: {CONTROL_API_URL}")
     print("Heartbeats run every 5 seconds.")
     print("Use the control API to stop or start individual devices.")
     print("Press Ctrl+C to stop the simulator.")
