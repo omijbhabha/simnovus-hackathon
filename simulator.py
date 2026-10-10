@@ -1,6 +1,6 @@
-
 import time
 import requests
+import argparse
 
 
 API_URL = "http://127.0.0.1:8000"
@@ -43,10 +43,35 @@ def simulate_device(name, device_type, interval=5):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Simulate a device sending heartbeats"
+    )
+
+    parser.add_argument(
+        "--name",
+        default="Temperature Sensor 1",
+        help="Name of the device",
+    )
+    parser.add_argument(
+        "--type",
+        dest="device_type",
+        default="temperature_sensor",
+        help="Type of the device",
+    )
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default=5,
+        help="Heartbeat interval in seconds",
+    )
+
+    args = parser.parse_args()
+
     try:
         simulate_device(
-            name="Temperature Sensor 1",
-            device_type="temperature_sensor",
+            name=args.name,
+            device_type=args.device_type,
+            interval=args.interval,
         )
     except requests.RequestException as exc:
         print(f"Simulator API error: {exc}")
