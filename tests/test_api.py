@@ -102,3 +102,35 @@ def test_heartbeat_for_unknown_device():
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Device not found"
+
+
+def test_device_status_endpoint():
+    registration = client.post(
+        "/devices",
+        json={
+            "name": "Status Sensor",
+            "device_type": "temperature_sensor",
+        },
+    )
+
+    device_id = registration.json()["id"]
+
+    # A device without a heartbeat should be offline.
+    response = client.get(f"/devices/{device_id}/status")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "device_id": device_id,
+        "status": "OFFLINE",
+    }
+
+    # After a heartbeat, the device should be online.
+    client.post(f"/devices/{device_id}/heartbeat")
+
+    response = client.get(f"/devices/{device_id}/status")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "device_id": device_id,
+        "status": "ONLINE",
+    }
