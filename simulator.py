@@ -43,7 +43,10 @@ def simulate_device(name, device_type, interval=5):
 
 
 if __name__ == "__main__":
-    simulate_device(
-        name="Temperature Sensor 1",
-        device_type="temperature_sensor",
-    )
+    try:
+        simulate_device(
+            name="Temperature Sensor 1",
+            device_type="temperature_sensor",
+        )
+    except requests.RequestException as exc:
+        print(f"Simulator API error: {exc}")
