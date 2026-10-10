@@ -62,3 +62,14 @@ def test_list_devices():
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["name"] == "Sensor A"
+
+
+def test_summary_endpoint():
+    response = client.get("/summary")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "total_devices": 0,
+        "online_devices": 0,
+        "offline_devices": 0,
+    }
