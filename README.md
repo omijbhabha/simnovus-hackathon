@@ -111,3 +111,10 @@ The tests cover API endpoints, device service behavior, heartbeat status, fleet 
 - Device information is stored in memory and is lost when the backend restarts.
 - The backend and simulator control API use separate ports: `8000` and `8001`.
 - Start the backend before starting the simulator.
+
+## AI Usage
+
+- **Tool used:** ChatGPT.
+- **Purpose:** Used to review implementation correctness, brainstorm simulator ideas, and assist with testing and debugging.
+- **Suggestion improved:** Refined the simulator approach to support stopping and resuming individual devices through a control API, rather than only running continuous heartbeats.
+- **Personal verification:** Ran the automated test suite and manually tested the backend and simulator to verify device registration, heartbeat handling, and online/offline status.
