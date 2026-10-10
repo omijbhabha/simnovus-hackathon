@@ -65,3 +65,26 @@ def test_device_status():
     service.record_heartbeat(device["id"])
 
     assert service.get_device_status(device["id"]) == "ONLINE"
+
+
+def test_summary():
+    service = DeviceService()
+
+    online_device = service.register_device(
+        name="Sensor C",
+        device_type="temperature_sensor",
+    )
+    service.register_device(
+        name="Sensor D",
+        device_type="humidity_sensor",
+    )
+
+    service.record_heartbeat(online_device["id"])
+
+    summary = service.get_summary()
+
+    assert summary == {
+        "total_devices": 2,
+        "online_devices": 1,
+        "offline_devices": 1,
+    }
