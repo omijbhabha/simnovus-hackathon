@@ -40,3 +40,14 @@ def register_device(request: DeviceRegistration):
             status_code=400,
             detail=str(exc),
         ) from exc
+
+
+@app.post("/devices/{device_id}/heartbeat")
+def send_heartbeat(device_id: str):
+    try:
+        return service.record_heartbeat(device_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc

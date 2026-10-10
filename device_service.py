@@ -1,3 +1,4 @@
+
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -26,3 +27,13 @@ class DeviceService:
 
         self.devices[device["id"]] = device
         return device
+
+    def record_heartbeat(self, device_id: str) -> dict:
+        if device_id not in self.devices:
+            raise ValueError("Device not found")
+
+        self.devices[device_id]["last_heartbeat"] = (
+            datetime.now(timezone.utc).isoformat()
+        )
+
+        return self.devices[device_id]
