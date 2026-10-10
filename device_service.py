@@ -40,3 +40,9 @@ class DeviceService:
 
     def list_devices(self) -> list:
         return list(self.devices.values())
+
+    def get_device(self, device_id: str) -> dict:
+        if device_id not in self.devices:
+            raise ValueError("Device not found")
+
+        return self.devices[device_id]

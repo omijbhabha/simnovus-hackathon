@@ -55,3 +55,13 @@ def send_heartbeat(device_id: str):
 @app.get("/devices")
 def list_devices():
     return service.list_devices()
+
+@app.get("/devices/{device_id}")
+def get_device(device_id: str):
+    try:
+        return service.get_device(device_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
