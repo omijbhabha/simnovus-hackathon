@@ -63,3 +63,20 @@ class DeviceService:
             return "ONLINE"
 
         return "OFFLINE"
+
+    
+    def get_summary(self) -> dict:
+        total_devices = len(self.devices)
+        online_devices = 0
+
+        for device_id in self.devices:
+            if self.get_device_status(device_id) == "ONLINE":
+                online_devices += 1
+
+        offline_devices = total_devices - online_devices
+
+        return {
+            "total_devices": total_devices,
+            "online_devices": online_devices,
+            "offline_devices": offline_devices,
+        }

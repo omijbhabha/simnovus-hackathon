@@ -79,4 +79,8 @@ def get_device_status(device_id: str):
             status_code=404,
             detail=str(exc),
         ) from exc
-    
+
+
+@app.get("/summary")
+def get_summary():
+    return service.get_summary()
