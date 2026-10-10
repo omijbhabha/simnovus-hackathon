@@ -45,3 +45,20 @@ def test_register_device_with_empty_name():
     )
 
     assert response.status_code == 422
+
+
+
+def test_list_devices():
+    client.post(
+        "/devices",
+        json={
+            "name": "Sensor A",
+            "device_type": "temperature_sensor",
+        },
+    )
+
+    response = client.get("/devices")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["name"] == "Sensor A"
